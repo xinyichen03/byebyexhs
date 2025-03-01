@@ -1,0 +1,48 @@
+<body>
+    <div class="search-container">
+        <h1>AI-Powered Search</h1>
+        <form id="search-form">
+            <input type="text" id="query" class="search-box" placeholder="Ask me anything..." required>
+            <br>
+            <button type="submit" class="search-button">Search</button>
+        </form>
+    </div>
+    <div id="response-container"></div>
+
+    <script>
+        document.getElementById('search-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const query = document.getElementById('query').value;
+            const responseContainer = document.getElementById('response-container');
+            responseContainer.innerHTML = 'Searching...';
+
+            fetch('/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ query: query }),
+            }).then(response => {
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                responseContainer.innerHTML = '';
+
+                function readStream() {
+                    reader.read().then(({ done, value }) => {
+                        if (done) {
+                            return;
+                        }
+                        const chunk = decoder.decode(value, { stream: true });
+                        responseContainer.innerHTML += chunk;
+                        responseContainer.scrollTop = responseContainer.scrollHeight;
+                        readStream();
+                    });
+                }
+
+                readStream();
+            }).catch(error => {
+                responseContainer.innerHTML = 'An error occurred: ' + error;
+            });
+        });
+    </script>
+</body>

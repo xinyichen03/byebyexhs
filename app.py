@@ -1,18 +1,25 @@
 import os
-import requests
+from dotenv import load_dotenv
 import anthropic
 from time import sleep
-from flask import Flask, render_template, request, Response, stream_with_context
 from typing import List, Dict
-import newspaper  # alternative to beautifulsoup
+import requests
+import yaml
+from bs4 import BeautifulSoup
+from flask import Flask, render_template, request, Response, stream_with_context
 
-BRAVE_API_KEY = ''
-ANSWER_PROMPT = ''
+load_dotenv()
+
+BRAVE_API_KEY = os.environ.get('BRAVE_API_KEY')
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY')
+
+with open('config.yaml', 'r') as file:
+    config = yaml.safe_load(file)
+    ANSWER_PROMPT = config['ANSWER_PROMPT']
 
 app = Flask(__name__)
 
-client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-
+client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 @app.route("/")
 def index():
@@ -71,15 +78,34 @@ def get_search_results(search_query: str, limit: int = 3):
     sleep(1)  # avoid Brave rate limit
     return response.json().get("web", {}).get("results")
 
+# def get_url_content(url: str) -> str:
+#     # Extract content from a URL using newspaper
+#     article = newspaper.Article(url)
+#     try:
+#         article.download()
+#         article.parse()
+#     except newspaper.article.ArticleException:
+#         return ""
+#     return article.text or ""
+
 def get_url_content(url: str) -> str:
-    # Extract content from a URL using newspaper
-    article = newspaper.Article(url)
     try:
-        article.download()
-        article.parse()
-    except newspaper.article.ArticleException:
+        # Send a GET request to the URL
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an exception for bad status codes
+
+        # Parse the HTML content
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # Extract text from the parsed HTML
+        # This will get all text from the page, you might want to refine this based on your needs
+        text = soup.get_text(separator=' ', strip=True)
+
+        return text
+    except (requests.RequestException, ValueError) as e:
+        print(f"Error fetching URL content: {e}")
         return ""
-    return article.text or ""
+
 
 def generate_response(query: str, results: List[Dict]) -> str:
     # Format the search results
