@@ -1,7 +1,7 @@
 import requests
 from time import sleep
 from typing import List, Dict
-import newspaper3k  # alternative to beautifulsoup
+import newspaper  # alternative to beautifulsoup
 import anthropic
 import os
 
@@ -29,7 +29,7 @@ def get_search_results(search_query: str, limit: int = 3):
     return response.json().get("web", {}).get("results")
 
 def get_url_content(url: str) -> str:
-    # Extract content from a URL using newspaper3k
+    # Extract content from a URL using newspaper
     article = newspaper.Article(url)
     try:
         article.download()
