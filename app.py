@@ -13,7 +13,7 @@ load_dotenv()
 BRAVE_API_KEY = os.environ.get('BRAVE_API_KEY')
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY')
 
-with open('config.yaml', 'r') as file:
+with open('prompt.yaml', 'r') as file:
     config = yaml.safe_load(file)
     ANSWER_PROMPT = config['ANSWER_PROMPT']
 
